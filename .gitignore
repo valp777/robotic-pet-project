@@ -1,0 +1,18 @@
+# Ignore environment files
+python_backend/.env
+
+# Python-related ignores
+python_backend/__pycache__/
+python_backend/*.pyc
+python_backend/venv/
+
+# Unity-related ignores
+[Ll]ibrary/
+[Tt]emp/
+[Oo]bj/
+[Bb]uild/
+[Bb]uilds/
+[Ll]ogs/
+[Mm]emoryCaptures/
+*.csproj
+*.unitypackage

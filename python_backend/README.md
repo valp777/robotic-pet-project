@@ -1,4 +1,4 @@
-# Real-Time Emotion and Speech RecognitionSystem with Robotic Pet
+# Real-Time Emotion and Speech Recognition System with Robotic Pet
 
 ## Installation
 

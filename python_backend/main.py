@@ -154,10 +154,10 @@ def send_2_cerebras(text):
     }
 
     try:
-        print(f"Sending Request to Cerebras API: {message}")
+        # print(f"Sending Request to Cerebras API: {message}")
         response = requests.post(CEREBRAS_API_URL, json=message, headers=headers)
-        print(f"Response Status Code: {response.status_code}")
-        print(f"Response Text: {response.text}")
+        # print(f"Response Status Code: {response.status_code}")
+        # print(f"Response Text: {response.text}")
 
         if response.status_code == 200:
             #reply = response.json().get("response", "")

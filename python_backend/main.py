@@ -180,7 +180,7 @@ def detected_emotion():
 
     return jsonify({"emotion": emotion})
 
-@flaskapp.route('/talking_2_pet', methods=['POST']) # or POST??
+@flaskapp.route('/talking_2_pet', methods=['POST'])
 def talking_2_pet():
     userinput = speech_2_text()
     if userinput is None:
@@ -198,6 +198,8 @@ def talking_2_pet():
         chatbot_response = send_2_cerebras(userinput)
         if chatbot_response is None:
             return jsonify({"error": "Failed to get response from Cerebras API"}), 500
+
+        print(f"Cerebras chatbot response: {chatbot_response}")
 
         return jsonify({"user_text": userinput, "chatbot_response": chatbot_response})
 

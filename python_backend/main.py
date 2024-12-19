@@ -70,7 +70,7 @@ cascade_face = cv2.CascadeClassifier(cv2.data.haarcascades +'haarcascade_frontal
 load_dotenv()
 
 CEREBRAS_API_KEY = os.getenv("CEREBRAS_API_KEY")
-CEREBRAS_API_URL = "https://api.cerebras.ai/v1"
+CEREBRAS_API_URL = "https://api.cerebras.ai/v1/chat/completions"
 
 def start_cam():
     global webcam
@@ -147,16 +147,25 @@ def send_2_cerebras(text):
         "Authorization": f"Bearer {CEREBRAS_API_KEY}",
         "Content-Type": "application/json"
     }
-    message = {"user_input": text}
+    #message = {"user_input": text}
+    message = {
+        "model": "llama3.1-8b",  # Specify a valid model
+        "messages": [{"role": "user", "content": text}]
+    }
 
     try:
+        print(f"Sending Request to Cerebras API: {message}")
         response = requests.post(CEREBRAS_API_URL, json=message, headers=headers)
+        print(f"Response Status Code: {response.status_code}")
+        print(f"Response Text: {response.text}")
+
         if response.status_code == 200:
-            reply = response.json().get("response", "")
+            #reply = response.json().get("response", "")
+            reply = response.json().get("choices", [{}])[0].get("message", {}).get("content", "")
             print(f"Cerebras Response: {reply}")
             return reply
         else:
-            print("Error from Cerebras API: {response.status_code} - {response.text}")
+            print(f"Error from Cerebras API: {response.status_code} - {response.text}")
             return None
     except Exception as e:
         print(f"Error communicating with Cerebras API: {e}")

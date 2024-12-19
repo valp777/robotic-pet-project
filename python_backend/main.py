@@ -4,6 +4,8 @@ from flask import Flask, jsonify
 from deepface import DeepFace
 import speech_recognition as sr
 import requests
+from dotenv import load_dotenv
+import os
 
 """
 flaskapp = Flask(__name__)
@@ -55,6 +57,7 @@ if __name__ == "__main__":
     main()
 
 """
+
 # initializing flask app
 flaskapp = Flask(__name__)
 
@@ -63,6 +66,11 @@ webcam = None
 
 # load face detector 
 cascade_face = cv2.CascadeClassifier(cv2.data.haarcascades +'haarcascade_frontalface_default.xml')
+
+load_dotenv()
+
+CEREBRAS_API_KEY = os.getenv("CEREBRAS_API_KEY")
+CEREBRAS_API_URL = "https://api.cerebras.ai/v1"
 
 def start_cam():
     global webcam
@@ -109,41 +117,50 @@ def detecting_face_emotions(frame):
     else:
         return "Face not detected"
 
-###
-"""
-def main():
+def possible_commands(text):
+    commands = ['sit', 'sleep', 'paw', 'stand', 'rollover']
+    for command in commands:
+        if command in text.lower():
+            print(f"Command detected: {command}")
+            return command
+    return None
 
-    webcam = start_cam()
+def speech_2_text():
+    recognizer = sr.Recognizer()
+    with sr.Microphone() as source:
+        print("Listening...")
+        try:
+            audio = recognizer.listen(source)
+            text = recognizer.recognize_google(audio)
+            print(f"Recognized Text: {text}")
+            return text
+
+        except sr.UnknownValueError:
+            print("Sorry, could not understand the audio.")
+            return None
+        except sr.RequestError:
+            print("Error connecting to Google Speech Recognition.")
+            return None
+
+def send_2_cerebras(text):
+    headers = {
+        "Authorization": f"Bearer {CEREBRAS_API_KEY}",
+        "Content-Type": "application/json"
+    }
+    message = {"user_input": text}
 
     try:
-        while True:
-
-            # read current frame from webcam 
-            ret, frame = webcam.read()
-            if not ret:
-                print("Error: Could not read frame")
-                break
-
-            emotion = detecting_face_emotions(frame)
-            print(f"Detected Facial Emotion: {emotion}")
-
-            # displaying results 
-            cv2.imshow('Emotion', frame)
-
-            # break loop if 'q' is pressed
-            if cv2.waitKey(1) & 0xFF == ord('q'):
-                break
-
-    except KeyboardInterrupt:   # pressing Ctrl+C
-        print("Stopping program")
-
-    finally:
-        release_cam(webcam)
-
-if __name__ == "__main__":
-    main()
-"""
-### old way above 
+        response = requests.post(CEREBRAS_API_URL, json=message, headers=headers)
+        if response.status_code == 200:
+            reply = response.json().get("response", "")
+            print(f"Cerebras Response: {reply}")
+            return reply
+        else:
+            print("Error from Cerebras API: {response.status_code} - {response.text}")
+            return None
+    except Exception as e:
+        print(f"Error communicating with Cerebras API: {e}")
+        return None
 
 @flaskapp.route('/detected_emotion', methods=['GET'])
 def detected_emotion():
@@ -162,6 +179,27 @@ def detected_emotion():
     cv2.imshow('Emotion', frame)
 
     return jsonify({"emotion": emotion})
+
+@flaskapp.route('/talking_2_pet', methods=['POST']) # or POST??
+def talking_2_pet():
+    userinput = speech_2_text()
+    if userinput is None:
+        return jsonify({"error": "Couldn't recognize speech"}), 500
+
+    command = possible_commands(userinput)
+
+    if command:
+        print(f"Command detected: {command}")
+
+        return jsonify({"user_text": userinput, "movement": command})
+
+    else:
+        # send user speech text to Cerebras and get response
+        chatbot_response = send_2_cerebras(userinput)
+        if chatbot_response is None:
+            return jsonify({"error": "Failed to get response from Cerebras API"}), 500
+
+        return jsonify({"user_text": userinput, "chatbot_response": chatbot_response})
 
 if __name__ == "__main__":
     try:
